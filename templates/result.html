@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heartwise</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        .visualization-container {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .ecg-chart {
+            width: 100%;
+            height: 300px;
+            overflow: hidden;
+        }
+        
+        .results-panel {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .health-score {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background-color: #f8fafc;
+            border-radius: 8px;
+        }
+        
+        .score-value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .score-chart {
+            margin: 1rem 0;
+        }
+        
+        .abnormality-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            background-color: #f8fafc;
+            border-radius: 4px;
+        }
+        
+        .abnormality-severity {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.75rem;
+        }
+        
+        .severity-high {
+            background-color: var(--danger);
+        }
+        
+        .severity-medium {
+            background-color: var(--warning);
+        }
+        
+        .severity-low {
+            background-color: var(--success);
+        }
+        
+        .status-box {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            color: white;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                </svg>
+                <div class="logo">Heart<span class="logo-accent">Wise❣️</span></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>ECG Analysis Result</h1>
+        
+        <div class="result-card">
+            <div class="result-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                <h2>Analysis Complete</h2>
+            </div>
+            
+            <h3>Arrhythmia Detection Results:</h3>
+            <ul class="prediction-list">
+                {% for pred in predictions %}
+                    <li class="prediction-item">
+                        <span class="prediction-type">{{ pred['Arrhythmia'] }}</span> - 
+                        {{ pred['Description'] }}
+                    </li>
+                {% endfor %}
+            </ul>
+            
+            <div class="visualization-container">
+                <h3>ECG Visualization & Health Assessment</h3>
+                
+                <div class="ecg-chart">
+                    <svg width="100%" height="300" viewBox="0 0 1000 300">
+                        <path id="ecg-path" d="M0,150" stroke="var(--primary)" stroke-width="2" fill="none"></path>
+                        <g id="annotations"></g>
+                    </svg>
+                </div>
+                
+                <div class="results-panel">
+                    <div class="health-score">
+                        <div>Heart Health Score</div>
+                        <div class="score-value" id="score-value">--</div>
+                        <div class="score-chart" id="score-chart"></div>
+                        <div id="score-face" style="font-size: 2rem;">--</div>
+                        <div id="status-container"></div>
+                    </div>
+                    
+                    <div>
+                        <h4>Detected Abnormalities</h4>
+                        <div id="abnormalities-list"></div>
+                        
+                        <h4>ML Model Analysis</h4>
+                        <div id="ml-results">
+                            {% for pred in predictions %}
+                                <div class="abnormality-item">
+                                    <div class="abnormality-severity 
+                                        {% if pred['Arrhythmia'] == 'VEB' %}
+                                            severity-high
+                                        {% elif pred['Arrhythmia'] == 'SVEB' or pred['Arrhythmia'] == 'F' %}
+                                            severity-medium
+                                        {% else %}
+                                            severity-low
+                                        {% endif %}
+                                    "></div>
+                                    <div>
+                                        <strong>{{ pred['Arrhythmia'] }}</strong>
+                                        <div>{{ pred['Description'] }}</div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <h4>Recommendations</h4>
+                        <div id="recommendations"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="result-info">
+                <p><strong>Important:</strong> This is an automated analysis and should not replace professional medical advice. Please consult with a healthcare professional to interpret these results.</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="/" class="btn">Analyze Another ECG</a>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>ECG Analysis System &copy; 2025 | Always consult with healthcare professionals</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Load ECG data from the API
+            try {
+                const ecgResponse = await fetch('/api/get_processed_csv');
+                const csvData = await ecgResponse.text();
+                
+                // Parse CSV
+                const ecgData = parseCSV(csvData);
+                
+                // Load ML predictions
+                const predictionsResponse = await fetch('/api/get_predictions');
+                const predictionsData = await predictionsResponse.json();
+                
+                // Get user parameters from server
+                const userParamsResponse = await fetch('/api/get_user_params');
+                const userParams = await userParamsResponse.json();
+                
+                // Process data and update visualizations
+                updateVisualizations(ecgData, predictionsData.predictions, userParams);
+            } catch (error) {
+                console.error('Error loading data:', error);
+                
+                // Fallback to generated data if API fails
+                const ecgData = generateEcgData();
+                
+                // Get prediction data from template
+                const mlPredictions = [];
+                document.querySelectorAll('.prediction-item').forEach(item => {
+                    const arrhythmiaEl = item.querySelector('.prediction-type');
+                    if (arrhythmiaEl) {
+                        const arrhythmia = arrhythmiaEl.textContent;
+                        mlPredictions.push({
+                            Arrhythmia: arrhythmia,
+                            Description: getArrhythmiaDescription(arrhythmia)
+                        });
+                    }
+                });
+                
+                // Default user params
+                const defaultUserParams = {
+                    age: 35,
+                    bmi: 24
+                };
+                
+                updateVisualizations(ecgData, mlPredictions, defaultUserParams);
+            }
+        });
+
+        // Parse CSV data
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n');
+            const result = [];
+            
+            const hasHeader = lines[0].includes(',');
+            const startIdx = hasHeader ? 1 : 0;
+            
+            for (let i = startIdx; i < lines.length; i++) {
+                if (lines[i].trim() === '') continue;
+                
+                const parts = lines[i].split(',');
+                if (parts.length >= 2) {
+                    // Use first two columns as x and y values
+                    result.push({
+                        x: parseFloat(parts[0]),
+                        y: parseFloat(parts[1])
+                    });
+                }
+            }
+            
+            return result.length > 0 ? result : generateEcgData();
+        }
+
+        // Generate random ECG-like data for demonstration
+        function generateEcgData() {
+            const data = [];
+            let x = 0;
+            
+            // Base pattern (normal sinus rhythm)
+            const basePattern = [
+                0, 0, 0, 0.1, 0.2, 0, -0.1, -0.1, 0, 0, 0.1, 5, -3, 0.5, 0.3, 0.2, 0, 0, -0.2, -0.3, -0.2, 0
+            ];
+            
+            // Generate multiple heartbeats
+            for (let i = 0; i < 20; i++) {
+                // Add some variation to each heartbeat
+                for (let j = 0; j < basePattern.length; j++) {
+                    const value = basePattern[j] + (Math.random() * 0.1 - 0.05);
+                    data.push({ x: x, y: value });
+                    x += 2;
+                }
+            }
+            
+            // Add some abnormalities for demo purposes
+            // Simulate ST elevation at random points
+            for (let i = 0; i < 3; i++) {
+                const abnormalityStart = Math.floor(Math.random() * (data.length - 20));
+                for (let j = 0; j < 10; j++) {
+                    if (data[abnormalityStart + j]) {
+                        data[abnormalityStart + j].y += 1.2;
+                        data[abnormalityStart + j].abnormal = true;
+                    }
+                }
+            }
+            
+            return data;
+        }
+
+        // Get arrhythmia description
+        function getArrhythmiaDescription(type) {
+            const descriptions = {
+                'N': 'Normal sinus rhythm',
+                'SVEB': 'Supraventricular ectopic beat',
+                'VEB': 'Ventricular ectopic beat',
+                'F': 'Fusion beat',
+                'Q': 'Unclassifiable beat'
+            };
+            
+            return descriptions[type] || 'Unknown type';
+        }
+
+        // Update visualizations with data
+        function updateVisualizations(ecgData, mlPredictions, userParams) {
+            // Calculate health score
+            const healthScore = calculateHealthScore(
+                userParams.age || 35, 
+                userParams.bmi || 24, 
+                ecgData, 
+                mlPredictions
+            );
+            
+            // Update UI with results
+            updateResults(healthScore, ecgData, mlPredictions);
+        }
+
+        // Calculate health score based on ML predictions and ECG data
+        function calculateHealthScore(age, bmi, ecgData, mlPredictions) {
+            // Count abnormal data points in ECG
+            const abnormalPoints = ecgData.filter(point => point.abnormal).length;
+            const abnormalityRatio = ecgData.length > 0 ? abnormalPoints / ecgData.length : 0;
+            
+            // Base score starts at 100
+            let score = 100;
+            
+            // Deduct points based on age
+            if (age > 50) {
+                score -= (age - 50) * 0.5;
+            }
+            
+            // Deduct points based on BMI (if outside healthy range)
+            if (bmi < 18.5) {
+                score -= (18.5 - bmi) * 2;
+            } else if (bmi > 25) {
+                score -= (bmi - 25) * 2;
+            }
+            
+            // Deduct points for ECG abnormalities
+            score -= abnormalityRatio * 300;
+            
+            // Adjust based on ML predictions
+            if (mlPredictions && mlPredictions.length > 0) {
+                mlPredictions.forEach(pred => {
+                    if (pred.Arrhythmia === 'N') {
+                        // Normal rhythm - no deduction
+                    } else if (pred.Arrhythmia === 'SVEB') {
+                        score -= 15; // Supraventricular ectopic beat
+                    } else if (pred.Arrhythmia === 'VEB') {
+                        score -= 25; // Ventricular ectopic beat
+                    } else if (pred.Arrhythmia === 'F') {
+                        score -= 20; // Fusion beat
+                    } else if (pred.Arrhythmia === 'Q') {
+                        score -= 10; // Unclassifiable beat
+                    }
+                });
+            }
+            
+            // Ensure score is between 0 and 100
+            return Math.max(0, Math.min(100, Math.round(score)));
+        }
+
+        // Update UI with analysis results
+        function updateResults(healthScore, ecgData, mlPredictions) {
+            // Update score value
+            document.getElementById('score-value').textContent = `${healthScore}%`;
+            
+            // Update donut chart
+            updateDonutChart(healthScore);
+            
+            // Update face emoji based on score
+            updateScoreFace(healthScore);
+            
+            // Update score description in recommendations
+            updateRecommendations(healthScore);
+            
+            // Draw ECG chart
+            drawEcgChart(ecgData);
+            
+            // Update abnormalities list
+            updateAbnormalities(healthScore, mlPredictions);
+            
+            // Update status box
+            updateStatusBox(healthScore);
+        }
+
+        // Update donut chart visualization
+        function updateDonutChart(score) {
+            const radius = 50;
+            const circumference = 2 * Math.PI * radius;
+            const strokeDashoffset = circumference - (score / 100) * circumference;
+            
+            // Determine color based on score
+            let color;
+            if (score >= 80) {
+                color = '#22c55e'; // success
+            } else if (score >= 60) {
+                color = '#f59e0b'; // warning
+            } else {
+                color = '#ef4444'; // danger
+            }
+            
+            document.getElementById('score-chart').innerHTML = `
+                <svg width="120" height="120" viewBox="0 0 120 120">
+                    <circle
+                        cx="60"
+                        cy="60"
+                        r="${radius}"
+                        fill="transparent"
+                        stroke="#e2e8f0"
+                        stroke-width="8"
+                    />
+                    <circle
+                        cx="60"
+                        cy="60"
+                        r="${radius}"
+                        fill="transparent"
+                        stroke="${color}"
+                        stroke-width="8"
+                        stroke-dasharray="${circumference}"
+                        stroke-dashoffset="${strokeDashoffset}"
+                        transform="rotate(-90 60 60)"
+                    />
+                </svg>
+            `;
+        }
+
+        // Update face emoji based on score
+        function updateScoreFace(score) {
+            if (score >= 80) {
+                document.getElementById('score-face').textContent = '😃';
+            } else if (score >= 60) {
+                document.getElementById('score-face').textContent = '😐';
+            } else {
+                document.getElementById('score-face').textContent = '😟';
+            }
+        }
+
+        // Draw ECG chart
+        function drawEcgChart(ecgData) {
+            // Scale data to fit in SVG
+            const svgWidth = 1000;
+            const svgHeight = 300;
+            
+            // Create path data string
+            let pathData = '';
+            
+            if (ecgData.length === 0) {
+                return;
+            }
+            
+            // Max values for scaling
+            const maxX = Math.max(...ecgData.map(point => point.x));
+            
+            // Scale factors
+            const xScale = svgWidth / maxX;
+            
+            ecgData.forEach((point, index) => {
+                const x = point.x * xScale;
+                // Center the y values and scale them
+                const y = 150 - (point.y * 50);
+                
+                if (index === 0) {
+                    pathData = `M ${x} ${y}`;
+                } else {
+                    pathData += ` L ${x} ${y}`;
+                }
+            });
+            
+            // Set path data
+            document.getElementById('ecg-path').setAttribute('d', pathData);
+            
+            // Add annotations for abnormal regions
+            const annotations = document.getElementById('annotations');
+            annotations.innerHTML = '';
+            
+            ecgData.forEach((point, index) => {
+                if (point.abnormal) {
+                    const x = point.x * xScale;
+                    const y = 150 - (point.y * 50);
+                    
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', x);
+                    circle.setAttribute('cy', y);
+                    circle.setAttribute('r', '5');
+                    circle.setAttribute('fill', 'rgba(239, 68, 68, 0.5)');
+                    
+                    annotations.appendChild(circle);
+                }
+            });
+        }
+
+        // Update abnormalities list
+        function updateAbnormalities(score, mlPredictions) {
+            // Clear previous list
+            const abnormalitiesList = document.getElementById('abnormalities-list');
+            abnormalitiesList.innerHTML = '';
+            
+            // Generate abnormalities based on score and ML predictions
+            const abnormalities = [];
+            
+            // Add abnormalities based on ML predictions first
+            if (mlPredictions && mlPredictions.length > 0) {
+                const hasVEB = mlPredictions.some(p => p.Arrhythmia === 'VEB');
+                const hasSVEB = mlPredictions.some(p => p.Arrhythmia === 'SVEB');
+                const hasFusion = mlPredictions.some(p => p.Arrhythmia === 'F');
+                
+                if (hasVEB) {
+                    abnormalities.push({
+                        name: 'Ventricular Ectopic Beat',
+                        description: 'Premature heartbeat originating in the ventricles',
+                        severity: 'high'
+                    });
+                }
+                
+                if (hasSVEB) {
+                    abnormalities.push({
+                        name: 'Supraventricular Ectopic Beat',
+                        description: 'Premature heartbeat originating above the ventricles',
+                        severity: 'medium'
+                    });
+                }
+                
+                if (hasFusion) {
+                    abnormalities.push({
+                        name: 'Fusion Beat',
+                        description: 'Beat combining ventricular and normal activation',
+                        severity: 'medium'
+                    });
+                }
+            }
+            
+            // Add abnormalities based on score
+            if (score < 60) {
+                abnormalities.push({
+                    name: 'ST-segment elevation',
+                    description: 'Potential sign of myocardial injury or infarction',
+                    severity: 'high'
+                });
+            }
+            
+            if (score < 80) {
+                abnormalities.push({
+                    name: 'Heart Rate Irregularity',
+                    description: 'Irregular heart rhythm detected',
+                    severity: 'medium'
+                });
+            }
+            
+            // Generate HTML for each abnormality
+            abnormalities.forEach(abnormality => {
+                const item = document.createElement('div');
+                item.className = 'abnormality-item';
+                
+                item.innerHTML = `
+                    <div class="abnormality-severity severity-${abnormality.severity}"></div>
+                    <div>
+                        <strong>${abnormality.name}</strong>
+                        <div>${abnormality.description}</div>
+                    </div>
+                `;
+                
+                abnormalitiesList.appendChild(item);
+            });
+            
+            // If no abnormalities were found
+            if (abnormalities.length === 0) {
+                abnormalitiesList.innerHTML = '<p>No significant abnormalities detected.</p>';
+            }
+        }
+
+        // Update recommendations
+        function updateRecommendations(score) {
+            const recommendations = document.getElementById('recommendations');
+            let recommendationsList = '';
+            
+            if (score >= 80) {
+                recommendationsList = `
+                    <li>Continue regular exercise (at least 150 minutes per week)</li>
+                    <li>Maintain a heart-healthy diet rich in fruits, vegetables, and whole grains</li>
+                    <li>Schedule routine check-ups with your healthcare provider</li>
+                    <li>Monitor your blood pressure and cholesterol levels regularly</li>
+                `;
+            } else if (score >= 60) {
+                recommendationsList = `
+                    <li>Schedule a follow-up appointment with a cardiologist</li>
+                    <li>Consider stress management techniques like meditation or yoga</li>
+                    <li>Improve your diet by reducing sodium and saturated fat intake</li>
+                    <li>Increase physical activity gradually under medical supervision</li>
+                    <li>Monitor your blood pressure daily if possible</li>
+                `;
+            } else {
+                recommendationsList = `
+                    <li><strong>Seek immediate medical attention</strong></li>
+                    <li>Share these ECG results with your healthcare provider</li>
+                    <li>Avoid strenuous physical activity until cleared by a doctor</li>
+                    <li>Follow all medication instructions carefully</li>
+                    <li>Consider cardiac rehabilitation if recommended by your doctor</li>
+                `;
+            }
+            
+            recommendations.innerHTML = `<ul>${recommendationsList}</ul>`;
+        }
+
+        // Update status box based on health score
+        function updateStatusBox(score) {
+            const statusContainer = document.getElementById('status-container');
+            let statusText, statusColor;
+            
+            if (score >= 80) {
+                statusText = "Healthy";
+                statusColor = "var(--success)";
+            } else if (score >= 60) {
+                statusText = "Monitor";
+                statusColor = "var(--warning)";
+            } else {
+                statusText = "Critical";
+                statusColor = "var(--danger)";
+            }
+            
+            statusContainer.innerHTML = `
+                <div class="status-box" style="background-color: ${statusColor}">
+                    ${statusText}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
