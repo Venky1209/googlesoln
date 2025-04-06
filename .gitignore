@@ -1,0 +1,8 @@
+# .gitignore
+.env
+__pycache__/
+*.pyc
+uploads/ # Keep if you don't want uploads tracked
+*.h5 # Keep model out of git if large
+firebase_credentials.json # Keep credentials secure
+# Add other files/folders as needed

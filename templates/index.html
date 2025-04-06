@@ -3,172 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Heartwise</title>
+    <title>Heartwise - ECG Analysis</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <header>
         <div class="header-content">
-            <div class="logo">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-                </svg>
-                <div class="logo">Heart<span class="logo-accent">Wise❣️</span></div>
-            </div>
+             <div class="logo">
+                <i class="fas fa-heart-pulse logo-icon"></i>
+                Heart<span class="logo-accent">Wise</span>
+             </div>
         </div>
     </header>
 
     <div class="container">
         <div class="card form-card">
-            <h2>ECG Analysis</h2>
-            <p>Complete your details and upload or connect your device for ECG analysis</p>
-            
-            <div class="user-details-form">
-                <div class="form-row">
+            <h2>ECG Analysis Portal</h2>
+            <p class="subtitle">Enter patient details and choose an analysis method below.</p>
+
+            <!-- User Details Form -->
+            <form id="user-details-form" class="user-details-form">
+                 <h3><i class="fas fa-user-circle form-icon"></i> Patient Information</h3>
+                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="age">Age</label>
-                        <input type="number" id="age" name="age" min="1" max="120" required>
+                        <label for="age"><i class="fas fa-birthday-cake icon-prefix"></i> Age</label>
+                        <input type="number" id="age" name="age" min="1" max="120" required placeholder="e.g., 55">
+                        <span class="error-message" id="age-error"></span>
                     </div>
                     <div class="form-group">
-                        <label for="gender">Gender</label>
+                        <label for="gender"><i class="fas fa-venus-mars icon-prefix"></i> Gender</label>
                         <select id="gender" name="gender" required>
-                            <option value="">Select</option>
+                            <option value="" disabled selected>Select Gender</option>
                             <option value="male">Male</option>
                             <option value="female">Female</option>
                             <option value="other">Other</option>
                         </select>
+                         <span class="error-message" id="gender-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="height"><i class="fas fa-ruler-vertical icon-prefix"></i> Height (cm)</label>
+                        <input type="number" id="height" name="height" min="50" max="250" required placeholder="e.g., 175">
+                         <span class="error-message" id="height-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="weight"><i class="fas fa-weight-hanging icon-prefix"></i> Weight (kg)</label>
+                        <input type="number" id="weight" name="weight" min="1" max="300" required placeholder="e.g., 70">
+                         <span class="error-message" id="weight-error"></span>
                     </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="height">Height (cm)</label>
-                        <input type="number" id="height" name="height" min="50" max="250" required>
+                 <input type="hidden" id="bmi" name="bmi">
+            </form>
+
+            <div class="divider"><span>Choose Analysis Method</span></div>
+
+            <!-- Action Buttons Grid -->
+            <div class="action-grid">
+                <!-- Upload Option -->
+                <!-- Add id="upload-card" -->
+                <div class="action-option card" id="upload-card">
+                    <!-- Wrap existing content -->
+                    <div class="action-content">
+                        <h3><i class="fas fa-cloud-upload-alt action-icon"></i> Upload ECG Image</h3>
+                        <p>Upload a JPG, PNG, or GIF image of the ECG.</p>
+                        <form id="upload-form" action="/upload_image" method="post" enctype="multipart/form-data" class="upload-form">
+                            <div id="image-drop-zone" class="file-drop-zone">
+                                <input type="file" name="ecgImage" id="ecgImage" class="file-input" accept="image/png, image/jpeg, image/gif" required>
+                                <div class="drop-zone-prompt">
+                                    <i class="fas fa-file-image drop-icon"></i>
+                                    <p><strong>Drag & drop</strong> an ECG image here</p>
+                                    <p>or</p>
+                                    <label for="ecgImage" class="btn-browse">Browse File</label>
+                                </div>
+                            </div>
+                            <div id="image-name" class="file-name">No file selected</div>
+                            <span class="error-message" id="ecgImage-error"></span>
+                            <button type="submit" class="btn btn-primary btn-action">
+                                <i class="fas fa-cogs"></i> Upload & Process
+                            </button>
+                        </form>
                     </div>
-                    <div class="form-group">
-                        <label for="weight">Weight (kg)</label>
-                        <input type="number" id="weight" name="weight" min="1" max="300" required>
+                    <!-- Add processing indicator placeholder -->
+                    <div class="processing-indicator" id="upload-processing">
+                        <div class="loading-spinner"></div>
+                        <p>Processing Image...</p>
+                    </div>
+                </div>
+
+                <!-- Connect Device Option -->
+                 <!-- Add id="connect-card" -->
+                <div class="action-option card" id="connect-card">
+                     <!-- Wrap existing content -->
+                    <div class="action-content">
+                        <h3><i class="fas fa-wifi action-icon"></i> Connect To Device</h3>
+                        <p>Stream live ECG data from a connected device.</p>
+                        <div class="device-connection">
+                            <i class="fas fa-broadcast-tower connect-icon"></i>
+                            <button id="connect-device" class="btn btn-secondary btn-action">
+                                <i class="fas fa-plug"></i> Connect Now
+                            </button>
+                        </div>
+                        <span class="error-message" id="connect-error"></span>
+                    </div>
+                     <!-- Add processing indicator placeholder -->
+                    <div class="processing-indicator" id="connect-processing">
+                        <div class="connecting-animation">
+                           <div class="pulse-ring"></div>
+                           <div class="pulse-dot"></div>
+                        </div>
+                         <p>Connecting...</p>
+                         <div class="progress-bar">
+                            <div class="progress" id="connect-progress"></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="divider"><span>Choose your option</span></div>
-            
-            <div class="action-buttons">
-                <div class="action-option">
-                    <h3>Upload ECG Image</h3>
-                    <form id="upload-form" action="/upload_image" method="post" enctype="multipart/form-data" class="upload-form">
-                        <div class="file-input-container">
-                            <input type="file" name="ecgImage" id="ecgImage" class="file-input" accept="image/*" required>
-                            <label for="ecgImage" class="file-input-label">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="17 8 12 3 7 8"></polyline>
-                                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                                </svg>
-                                <span>Choose an ECG image</span>
-                            </label>
-                        </div>
-                        <div id="file-name" class="file-name"></div>
-                        <button type="submit" class="btn btn-primary btn-action">Upload & Process</button>
-                    </form>
-                </div>
-                
-                <div class="action-divider"></div>
-                
-                <div class="action-option">
-                    <h3>Connect To Device</h3>
-                    <div class="device-connection">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
-                            <path d="M8 13v-2"></path>
-                            <path d="M12 13V9"></path>
-                            <path d="M16 13v-3"></path>
-                        </svg>
-                        <button id="connect-device" class="btn btn-secondary btn-action">Connect Now</button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="loading" id="loading">
-                <div class="loading-spinner"></div>
-                <p id="loading-text">Processing your ECG image...</p>
-            </div>
-            
-            <div class="connecting" id="connecting">
-                <div class="connecting-animation">
-                    <div class="pulse-ring"></div>
-                    <div class="pulse-dot"></div>
-                </div>
-                <p>Connecting to Firebase...</p>
-                <div class="progress-bar">
-                    <div class="progress" id="connect-progress"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
+        </div> <!-- End Form Card -->
+    </div> <!-- End Container -->
+
     <footer>
-        <p>Heartwise &copy; 2025 | Always consult with healthcare professionals</p>
+        <p>Heartwise © 2025 | Always consult with healthcare professionals for diagnosis.</p>
     </footer>
 
-    <script>
-        // Display file name when selected
-        document.getElementById('ecgImage').addEventListener('change', function(e) {
-            const fileName = e.target.files[0] ? e.target.files[0].name : 'No file chosen';
-            document.getElementById('file-name').textContent = fileName;
-        });
-        
-        // Show loading animation when form is submitted
-        document.getElementById('upload-form').addEventListener('submit', function(e) {
-            // Check if user details are filled
-            const age = document.getElementById('age').value;
-            const gender = document.getElementById('gender').value;
-            const height = document.getElementById('height').value;
-            const weight = document.getElementById('weight').value;
-            
-            if (!age || !gender || !height || !weight) {
-                e.preventDefault();
-                alert('Please fill in all your details before uploading.');
-                return;
-            }
-            
-            document.getElementById('loading').style.display = 'flex';
-        });
-        
-        // Connect to device button logic
-        document.getElementById('connect-device').addEventListener('click', function() {
-            // Check if user details are filled
-            const age = document.getElementById('age').value;
-            const gender = document.getElementById('gender').value;
-            const height = document.getElementById('height').value;
-            const weight = document.getElementById('weight').value;
-            
-            if (!age || !gender || !height || !weight) {
-                alert('Please fill in all your details before connecting.');
-                return;
-            }
-            
-            // Show connecting animation
-            document.getElementById('connecting').style.display = 'flex';
-            
-            // Animate progress bar
-            let progress = 0;
-            const progressBar = document.getElementById('connect-progress');
-            
-            const interval = setInterval(function() {
-                progress += 1;
-                progressBar.style.width = progress + '%';
-                
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    // Redirect after 2 minutes (120 seconds)
-                    setTimeout(function() {
-                        window.location.href = '/result';
-                    }, 0); // Already waited 120 seconds with the progress bar
-                }
-            }, 1200); // 120 seconds / 100 steps = 1.2 seconds per step
-        });
-    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
